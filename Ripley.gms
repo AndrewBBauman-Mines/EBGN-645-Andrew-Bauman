@@ -22,4 +22,4 @@ rep("k=5","x") = x.l ;
 rep("k=5","lamba") = eq_capacitylimit.m ;
 
 
-execute_unlonad ' alldata.gdx' ;
+execute_unload 'alldata.gdx' ;
