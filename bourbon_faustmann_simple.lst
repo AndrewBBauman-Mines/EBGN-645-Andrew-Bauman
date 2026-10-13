@@ -1,0 +1,270 @@
+GAMS 54.3.1  61154be4 Aug 21, 2026          WEX-WEI x86 64bit/MS Windows - 10/12/26 22:51:20 Page 1
+Simple Faustmann Model for Bourbon Aging
+C o m p i l a t i o n
+
+
+   2   
+   3  * -------------------------------------------------------------------------
+   4  * The rickhouse is fixed in size and already full. Each barrel position is
+   5  * the "land": when a barrel is sold at age T it is refilled right away, and
+   6  * the cycle repeats forever. Choose the aging age T that maximizes the
+   7  * value of one barrel position (Faustmann land expectation value, LEV):
+   8  *
+   9  *    LEV(T) = [ R(T) - C*(1+r)^T ] / [ (1+r)^T - 1 ]
+  10  *    R(T)   = p(T) * Q0 * (1-delta)^T
+  11  * -------------------------------------------------------------------------
+  12   
+  13  Set t 'aging age at sale (years)' / 1*15 /;
+  14   
+  15  Scalar
+  16     Q0     'proof gallons at fill (PG per barrel)'           / 66.25 /
+  17     delta  'angel share lost per year (fraction per yr)'     / 0.00  /
+  18     C      'cost to fill a new barrel ($ per barrel)'        / 585   /
+  19     r      'real discount rate (fraction per yr)'            / 0.001  /;
+  20   
+  21  Parameter p(t) 'value of aged bourbon ($ per PG)'
+  22     /  1 10.00,   2 11.50,   3 13.50,   4 16.50,   5 18.50
+  23        6 20.25,   7 21.75,   8 23.00,   9 24.00,  10 24.75
+  24       11 25.40,  12 26.00,  13 26.50,  14 27.00,  15 27.40 /;
+  25   
+  26  Parameter
+  27     age(t)  'aging age (yr)'
+  28     Q(t)    'proof gallons left at age t (PG per barrel)'
+  29     Rv(t)   'value of a barrel sold at age t ($ per barrel)'
+  30     LEV(t)  'value of one barrel position on a t-year cycle ($ per position)';
+  31   
+  32  age(t) = ord(t);
+  33  Q(t)   = Q0*(1 - delta)**age(t);
+  34  Rv(t)  = p(t)*Q(t);
+  35  LEV(t) = (Rv(t) - C*(1 + r)**age(t)) / ((1 + r)**age(t) - 1);
+  36   
+  37  * --- Optimization: pick exactly one aging age -----------------------------
+  38  Binary Variable y(t) '1 if barrels are sold at age t';
+  39  Variable        z    'value of one barrel position ($ per position)';
+  40   
+  41  Equation
+  42     objective  'value of the chosen cycle'
+  43     onlyone    'choose exactly one aging age';
+  44   
+  45  objective..  z =e= sum(t, LEV(t)*y(t));
+  46  onlyone..    sum(t, y(t)) =e= 1;
+  47   
+  48  Model bourbon / all /;
+  49  option optcr = 0;
+  50  solve bourbon using mip maximizing z;
+  51   
+  52  * --- Results ---------------------------------------------------------------
+  53  Scalar Tstar 'optimal aging age (yr)';
+  54  Tstar = sum(t, age(t)*y.l(t));
+  55   
+  56  display Q, Rv, LEV, Tstar, z.l;
+  57   
+  58  * --- Print a results table to a text file --------------------------------
+  59  File res / 'results.txt' /;
+  60  put res;
+  61  put 'Faustmann Bourbon Model - Results' /;
+  62  put '---------------------------------------------------------------' /;
+  63  put 'Age (yr)':>10, 'Proof gal':>12, '$ per PG':>10, 'Barrel $':>12, 'LEV $':>12 /;
+  64  loop(t,
+  65     put age(t):10:0, Q(t):12:2, p(t):10:2, Rv(t):12:2, LEV(t):12:2 /;
+  66  );
+  67  put '---------------------------------------------------------------' /;
+  68  put 'Optimal aging age (yr):           ', Tstar:6:0 /;
+  69  put 'Value of a barrel position ($):   ', z.l:10:2 /;
+  70  putclose res;
+  71   
+  72  * --- Same table as a CSV for Excel -----------------------------------------
+  73  File csv / 'results.csv' /;
+  74  csv.pc = 5;
+  75  put csv;
+  76  put 'Age_yr', 'Proof_gal', 'Price_per_PG', 'Barrel_value', 'LEV' /;
+  77  loop(t,
+  78     put age(t):0:0, Q(t):0:2, p(t):0:2, Rv(t):0:2, LEV(t):0:2 /;
+  79  );
+  80  putclose csv;
+
+
+COMPILATION TIME     =        0.000 SECONDS      3 MB  54.3.1 61154be4 WEX-WEI
+GAMS 54.3.1  61154be4 Aug 21, 2026          WEX-WEI x86 64bit/MS Windows - 10/12/26 22:51:20 Page 2
+Simple Faustmann Model for Bourbon Aging
+Equation Listing    SOLVE bourbon Using MIP From line 50
+
+
+---- objective  =E=  value of the chosen cycle
+
+objective..  - 76915.0000000085*y(1) - 87808.3033483392*y(2) - 102436.943715646*y(3) - 126255.861834692*y(4) - 127284.006121866*y(5) - 125193.883214461*y(6) - 121325.444219503*y(7) - 116348.662621211*y(8) - 110635.744071468*y(9) - 104410.010305967*y(10) - 98712.4747266136*y(11) - 93686.4415335555*y(12) - 88924.0485011419*y(13) - 84839.6554356821*y(14) - 80859.0802070494*y(15) + z =E= 0 ; (LHS = 0)
+     
+
+---- onlyone  =E=  choose exactly one aging age
+
+onlyone..  y(1) + y(2) + y(3) + y(4) + y(5) + y(6) + y(7) + y(8) + y(9) + y(10) + y(11) + y(12) + y(13) + y(14) + y(15) =E= 1 ; (LHS = 0, INFES = 1 ****)
+     
+GAMS 54.3.1  61154be4 Aug 21, 2026          WEX-WEI x86 64bit/MS Windows - 10/12/26 22:51:20 Page 3
+Simple Faustmann Model for Bourbon Aging
+Column Listing      SOLVE bourbon Using MIP From line 50
+
+
+---- y  1 if barrels are sold at age t
+
+y(1)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+   -76915       objective
+        1       onlyone
+
+y(2)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+   -87808.3033  objective
+        1       onlyone
+
+y(3)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -102436.9437  objective
+        1       onlyone
+
+REMAINING 12 ENTRIES SKIPPED
+
+---- z  value of one barrel position ($ per position)
+
+z
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       objective
+
+GAMS 54.3.1  61154be4 Aug 21, 2026          WEX-WEI x86 64bit/MS Windows - 10/12/26 22:51:20 Page 4
+Simple Faustmann Model for Bourbon Aging
+Range Statistics    SOLVE bourbon Using MIP From line 50
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 1.000E+00, 1.000E+00] - Zero values observed as well
+Bound     [min, max] : [ 1.000E+00, 1.000E+00] - Zero values observed as well
+Matrix    [min, max] : [ 1.000E+00, 1.273E+05]
+
+GAMS 54.3.1  61154be4 Aug 21, 2026          WEX-WEI x86 64bit/MS Windows - 10/12/26 22:51:20 Page 5
+Simple Faustmann Model for Bourbon Aging
+Model Statistics    SOLVE bourbon Using MIP From line 50
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           2     SINGLE EQUATIONS            2
+BLOCKS OF VARIABLES           2     SINGLE VARIABLES           16
+NON ZERO ELEMENTS            31     DISCRETE VARIABLES         15
+
+
+GENERATION TIME      =        0.000 SECONDS      4 MB  54.3.1 61154be4 WEX-WEI
+GAMS 54.3.1  61154be4 Aug 21, 2026          WEX-WEI x86 64bit/MS Windows - 10/12/26 22:51:20 Page 6
+Simple Faustmann Model for Bourbon Aging
+Solution Report     SOLVE bourbon Using MIP From line 50
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   bourbon             OBJECTIVE  z
+     TYPE    MIP                 DIRECTION  MAXIMIZE
+     SOLVER  CPLEX               FROM LINE  50
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE           127284.0061
+
+ RESOURCE USAGE, LIMIT          0.000 10000000000.000
+ ITERATION COUNT, LIMIT         0    2147483647
+*** This solver runs with a demo license. No commercial use.
+--- GMO setup time: 0.00s
+--- GMO memory 0.50 Mb (peak 0.50 Mb)
+--- Dictionary memory 0.00 Mb
+--- Cplex 22.1.2.0 link memory 0.00 Mb (peak 0.00 Mb)
+--- Starting Cplex
+
+
+--- MIP status (101): integer optimal solution.
+--- Cplex Time: 0.00sec (det. 0.01 ticks)
+
+
+Proven optimal solution
+MIP Solution:       127284.006122    (0 iterations, 0 nodes)
+
+Best possible:      127284.006122
+Absolute gap:            0.000000
+Relative gap:            0.000000
+
+
+                           LOWER          LEVEL          UPPER
+
+---- EQU objective           .              .              .          
+---- EQU onlyone            1.0000         1.0000         1.0000      
+
+  objective  value of the chosen cycle
+  onlyone  choose exactly one aging age
+
+---- VAR y  1 if barrels are sold at age t
+
+          LOWER          LEVEL          UPPER
+
+1           .              .             1.0000      
+2           .              .             1.0000      
+3           .              .             1.0000      
+4           .              .             1.0000      
+5           .             1.0000         1.0000      
+6           .              .             1.0000      
+7           .              .             1.0000      
+8           .              .             1.0000      
+9           .              .             1.0000      
+10          .              .             1.0000      
+11          .              .             1.0000      
+12          .              .             1.0000      
+13          .              .             1.0000      
+14          .              .             1.0000      
+15          .              .             1.0000      
+
+                           LOWER          LEVEL          UPPER
+
+---- VAR z                 -INF       127284.0061        +INF         
+
+  z  value of one barrel position ($ per position)
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+GAMS 54.3.1  61154be4 Aug 21, 2026          WEX-WEI x86 64bit/MS Windows - 10/12/26 22:51:20 Page 7
+Simple Faustmann Model for Bourbon Aging
+E x e c u t i o n
+
+
+----     56 PARAMETER Q  proof gallons left at age t (PG per barrel)
+
+1  66.250,    2  66.250,    3  66.250,    4  66.250,    5  66.250,    6  66.250,    7  66.250,    8  66.250,    9  66.250,    10 66.250,    11 66.250,    12 66.250,    13 66.250,    14 66.250,    15 66.250
+
+
+----     56 PARAMETER Rv  value of a barrel sold at age t ($ per barrel)
+
+1   662.500,    2   761.875,    3   894.375,    4  1093.125,    5  1225.625,    6  1341.562,    7  1440.938,    8  1523.750,    9  1590.000,    10 1639.688,    11 1682.750,    12 1722.500,    13 1755.625,    14 1788.750,    15 1815.250
+
+
+----     56 PARAMETER LEV  value of one barrel position on a t-year cycle ($ per position)
+
+1   76915.000,    2   87808.303,    3  102436.944,    4  126255.862,    5  127284.006,    6  125193.883,    7  121325.444,    8  116348.663,    9  110635.744,    10 104410.010,    11  98712.475,    12  93686.442,    13  88924.049,    14  84839.655,    15  80859.080
+
+
+----     56 PARAMETER Tstar                =        5.000  optimal aging age (yr)
+            VARIABLE z.L                   =   127284.006  value of one barrel position ($ per position)
+
+**** REPORT FILE SUMMARY
+
+res C:\Users\abrba\OneDrive\Documents\Comp Econ\results.txt
+csv C:\Users\abrba\OneDrive\Documents\Comp Econ\results.csv
+
+
+EXECUTION TIME       =        0.032 SECONDS      5 MB  54.3.1 61154be4 WEX-WEI
+
+
+USER: GAMS Demo, for EULA and demo limitations see   G260530+0003Cc-GEN
+      https://www.gams.com/latest/docs/UG%5FLicense.html         DC0000
+
+
+**** FILE SUMMARY
+
+Input      C:\Users\abrba\OneDrive\Documents\Comp Econ\bourbon_faustmann_simple.gms
+Output     C:\Users\abrba\OneDrive\Documents\Comp Econ\bourbon_faustmann_simple.lst
