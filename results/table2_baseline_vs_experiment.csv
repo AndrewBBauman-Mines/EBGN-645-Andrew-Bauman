@@ -1,0 +1,9 @@
+,Baseline (flat demand),Experiment: older bourbon declines,All ages decline
+"NPV ($M, 2026)",20.84,19.28,19.12
+Avg sale age 2026 (yr),6.22,6.19,6.19
+Avg sale age 2045 (yr),4.4,4.34,4.39
+Barrels filled 2026-45,93174.77,71196.77,63463.88
+Utilization 2045,1.0,0.68,0.61
+Empty positions 2045,0.0,6312.04,7848.39
+Position shadow price 2045 ($),5.07,0.0,0.0
+Faustmann age at final prices (yr),4.0,4.0,4.0
