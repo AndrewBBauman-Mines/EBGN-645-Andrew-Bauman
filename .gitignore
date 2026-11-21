@@ -1,0 +1,5 @@
+*.lst
+*.gdx
+*.log
+225*/
+__pycache__/
